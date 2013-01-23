@@ -39,27 +39,7 @@ function Peptide(seq, staticModifications, varModifications, ntermModification, 
     // If this is a C-term sequence we will sum up the mass of the amino acids in the sequence starting from index (inclusive)
     // modification masses are added
     this.getSeqMassMono = function _seqMassMono(index, term) {
-
-        var mass = 0;
-        var aa_obj = new AminoAcid();
-        if(sequence) {
-            if(term == "n") {
-                for( var i = 0; i < index; i += 1) {
-                    var aa = aa_obj.get(sequence.charAt(i));
-                    mass += aa.mono;
-                }
-            }
-            if (term == "c") {
-                for( var i = index; i < sequence.length; i += 1) {
-                    var aa = aa_obj.get(sequence.charAt(i));
-                    mass += aa.mono;
-                }
-            }
-        }
-
-        mass = _addTerminalModMass(mass, term);
-        mass = _addResidueModMasses(mass, index, term);
-        return mass;
+        return _getSeqMass(index, term, "mono");
     }
 
 
@@ -68,27 +48,7 @@ function Peptide(seq, staticModifications, varModifications, ntermModification, 
     // If this is a C-term sequence we will sum up the mass of the amino acids in the sequence starting from index (inclusive)
     // modification masses are added
     this.getSeqMassAvg = function _seqMassAvg(index, term) {
-
-        var mass = 0;
-        var aa_obj = new AminoAcid();
-        if(sequence) {
-            if(term == "n") {
-                for( var i = 0; i < index; i += 1) {
-                    var aa = aa_obj.get(sequence[i]);
-                    mass += aa.avg;
-                }
-            }
-            if (term == "c") {
-                for( var i = index; i < sequence.length; i += 1) {
-                    var aa = aa_obj.get(sequence[i]);
-                    mass += aa.avg;
-                }
-            }
-        }
-
-        mass = _addTerminalModMass(mass, term);
-        mass = _addResidueModMasses(mass, index, term);
-        return mass;
+        return _getSeqMass(index, term, "avg");
     }
 
     // Returns the monoisotopic neutral mass of the peptide; modifications added. N-term H and C-term OH are added
@@ -179,6 +139,29 @@ function Peptide(seq, staticModifications, varModifications, ntermModification, 
         return mass;
     }
 
+    function _getSeqMass(index, term, massType) {
+
+        var mass = 0;
+        var aa_obj = new AminoAcid();
+        if(sequence) {
+            if(term == "n") {
+                for( var i = 0; i < index; i += 1) {
+                    var aa = aa_obj.get(sequence[i]);
+                    mass += aa[massType];
+                }
+            }
+            if (term == "c") {
+                for( var i = index; i < sequence.length; i += 1) {
+                    var aa = aa_obj.get(sequence[i]);
+                    mass += aa[massType];
+                }
+            }
+        }
+
+        mass = _addTerminalModMass(mass, term);
+        mass = _addResidueModMasses(mass, index, term);
+        return mass;
+    }
 
     function _addTerminalModMass(seqMass, term) {
 
