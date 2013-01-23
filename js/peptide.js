@@ -34,12 +34,16 @@ function Peptide(seq, staticModifications, varModifications, ntermModification, 
         return varMods;
     }
 
+    this.staticMods = function() {
+        return staticMods;
+    }
+
     // index: index in the seq.
     // If this is a N-term sequence we will sum up the mass of the amino acids in the sequence up-to index (exclusive).
     // If this is a C-term sequence we will sum up the mass of the amino acids in the sequence starting from index (inclusive)
     // modification masses are added
     this.getSeqMassMono = function _seqMassMono(index, term) {
-        return _getSeqMass(index, term, "mono");
+        return _getSeqMass(null, index, term, "mono");
     }
 
 
@@ -48,8 +52,16 @@ function Peptide(seq, staticModifications, varModifications, ntermModification, 
     // If this is a C-term sequence we will sum up the mass of the amino acids in the sequence starting from index (inclusive)
     // modification masses are added
     this.getSeqMassAvg = function _seqMassAvg(index, term) {
-        return _getSeqMass(index, term, "avg");
+        return _getSeqMass(null, index, term, "avg");
     }
+
+    // index: index in the seq.
+    // If this is a N-term sequence we will sum up the mass of the amino acids in the sequence up-to index (exclusive).
+    // If this is a C-term sequence we will sum up the mass of the amino acids in the sequence starting from index (inclusive)
+    // modification masses are added
+    this.getSeqMass = _getSeqMass;
+
+
 
     // Returns the monoisotopic neutral mass of the peptide; modifications added. N-term H and C-term OH are added
     this.getNeutralMassMono = function _massNeutralMono() {
@@ -97,10 +109,11 @@ function Peptide(seq, staticModifications, varModifications, ntermModification, 
         return mass;
     }
 
-    function _addResidueModMasses(seqMass, index, term) {
+    function _addResidueModMasses(seqMass, slice, term) {
 
         var mass = seqMass;
-        var slice = new _Slice(index, term);
+        if(typeof(slice) == "number")
+            slice = new _Slice(null, slice, term);
         for( var i = slice.from; i < slice.to; i += 1) {
             // add any static modifications
             var mod = staticMods[sequence.charAt(i)];
@@ -117,20 +130,20 @@ function Peptide(seq, staticModifications, varModifications, ntermModification, 
         return mass;
     }
 
-    function _getSeqMass(index, term, massType) {
+    function _getSeqMass(startIndex, endIndex, term, massType) {
 
         var mass = 0;
         var aa_obj = new AminoAcid();
+        var slice = new _Slice(startIndex, endIndex, term);
         if(sequence) {
-            var slice = new _Slice(index, term);
             for( var i = slice.from; i < slice.to; i += 1) {
                 var aa = aa_obj.get(sequence[i]);
                 mass += aa[massType];
             }
         }
-
-        mass = _addTerminalModMass(mass, term);
-        mass = _addResidueModMasses(mass, index, term);
+        if(startIndex == null)
+            mass = _addTerminalModMass(mass, term);
+        mass = _addResidueModMasses(mass, slice, term);
         return mass;
     }
 
@@ -147,14 +160,20 @@ function Peptide(seq, staticModifications, varModifications, ntermModification, 
         return mass;
     }
 
-    function _Slice(index, term) {
+    // Defines a range or subsequence of peptide to iterate over.
+    // If term is "n", than the range is from startIndex (or 0 if 
+    // startIndex is null) to endIndex. If term is "c", the range is 
+    // from endIndex to startIndex (or sequence.length if startIndex
+    // is null).
+    function _Slice(startIndex, endIndex, term) {
         if(term == "n") {
-            this.from = 0;
-            this.to = index;
+            // If N-term sense, start from begining 
+            this.from = startIndex == null ? 0 : startIndex;
+            this.to = endIndex;
         }
         if(term == "c") {
-            this.from = index;
-            this.to = sequence.length;
+            this.from = endIndex;
+            this.to = startIndex == null ? sequence.length : startIndex;
         }
     }
 }

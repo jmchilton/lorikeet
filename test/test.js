@@ -67,6 +67,14 @@ test("getSeqMass for peptide with terminal modfications", function() {
     equal(mass2, AminoAcid.get("E").avg + TEST_C_TERM_MODIFICATION);
 });
 
+test("getSeqMass for internal ions", function() {
+    var peptide = UNMODIFIED_TEST_PEPTIDE;
+    var iMass = peptide.getSeqMass(2, 4, "n", "mono");
+    equal(iMass, AminoAcid.get("C").mono + AminoAcid.get("D").mono);
+    var iMass2 = peptide.getSeqMass(4, 1, "c", "avg");
+    equal(iMass2, AminoAcid.get("G").avg + AminoAcid.get("C").avg + AminoAcid.get("D").avg);
+});
+
 test("getNeutralMassMono for peptide with terminal modifications", function() {
     var mass = VARIABLE_MODFIFIED_PEPTIDE.getNeutralMassMono();
     var expectedMass = AminoAcid.get("A").mono +
@@ -149,3 +157,28 @@ test("getAmmoniaLossMz", function() {
     var expectedMz = (mass + (3 * Ion.MASS_PROTON)) / 3;
     equal(Ion.getAmmoniaLossMz(example()), expectedMz); 
 });
+
+// internal.js
+test("InternalIon labels", function() {
+    var peptide = STATIC_MODIFIED_PEPTIDE;
+    var i1 = new InternalIon(peptide, 0, 2, "mono");
+    equal(i1.label, "AG");
+    var i2 = new InternalIon(peptide, 0, 3, "mono");
+    equal(i2.label, "AGC(57)");
+});
+
+test("InternalIon mz", function() {
+    var i1 = new InternalIon(UNMODIFIED_TEST_PEPTIDE, 1, 3, "mono");
+    equal(i1.mz, AminoAcid.get("G").mono + AminoAcid.get("C").mono + Ion.MASS_PROTON);
+    var i2 = new InternalIon(STATIC_MODIFIED_PEPTIDE, 2, 4, "avg");
+    equal(i2.mz, AminoAcid.get("C").avg + 57.0 + AminoAcid.get("D").avg + Ion.MASS_PROTON);
+});
+
+test("getInternalIons", function() {
+    var simplePeptide = new Peptide("XAAAX", [], [], 0.0, 0.0);
+    var internalIons1 = getInternalIons(simplePeptide, "mono");
+    equal(2, internalIons1.length);
+    equal(internalIons1[0].label, "AA");
+    equal(internalIons1[1].label, "AAA");
+});
+
