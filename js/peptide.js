@@ -100,34 +100,17 @@ function Peptide(seq, staticModifications, varModifications, ntermModification, 
     function _addResidueModMasses(seqMass, index, term) {
 
         var mass = seqMass;
-
-        if(term == "n") {
-            for(var i = 0; i < index; i += 1) {
-                // add any static modifications
-                var mod = staticMods[sequence.charAt(i)];
-                if(mod) {
-                    mass += mod.modMass;
-                }
-                // add any variable modifications
-                mod = varMods[i+1]; // varMods index in the sequence is 1-based
-                if(mod) {
-                    mass += mod.modMass;
-                }
+        var slice = new _Slice(index, term);
+        for( var i = slice.from; i < slice.to; i += 1) {
+            // add any static modifications
+            var mod = staticMods[sequence.charAt(i)];
+            if(mod) {
+                mass += mod.modMass;
             }
-        }
-        if(term == "c") {
-            for(var i = index; i < sequence.length; i += 1) {
-                // add any static modifications
-                var mod = staticMods[sequence.charAt(i)];
-                if(mod) {
-                    mass += mod.modMass;
-                }
-
-                // add any variable modifications
-                mod = varMods[i+1]; // varMods index in the sequence is 1-based
-                if(mod) {
-                    mass += mod.modMass;
-                }
+            // add any variable modifications
+            mod = varMods[i+1]; // varMods index in the sequence is 1-based
+            if(mod) {
+                mass += mod.modMass;
             }
         }
 
@@ -139,17 +122,10 @@ function Peptide(seq, staticModifications, varModifications, ntermModification, 
         var mass = 0;
         var aa_obj = new AminoAcid();
         if(sequence) {
-            if(term == "n") {
-                for( var i = 0; i < index; i += 1) {
-                    var aa = aa_obj.get(sequence[i]);
-                    mass += aa[massType];
-                }
-            }
-            if (term == "c") {
-                for( var i = index; i < sequence.length; i += 1) {
-                    var aa = aa_obj.get(sequence[i]);
-                    mass += aa[massType];
-                }
+            var slice = new _Slice(index, term);
+            for( var i = slice.from; i < slice.to; i += 1) {
+                var aa = aa_obj.get(sequence[i]);
+                mass += aa[massType];
             }
         }
 
@@ -157,6 +133,7 @@ function Peptide(seq, staticModifications, varModifications, ntermModification, 
         mass = _addResidueModMasses(mass, index, term);
         return mass;
     }
+
 
     function _addTerminalModMass(seqMass, term) {
 
@@ -170,7 +147,19 @@ function Peptide(seq, staticModifications, varModifications, ntermModification, 
         return mass;
     }
 
+    function _Slice(index, term) {
+        if(term == "n") {
+            this.from = 0;
+            this.to = index;
+        }
+        if(term == "c") {
+            this.from = index;
+            this.to = sequence.length;
+        }
+    }
 }
+
+
 //-----------------------------------------------------------------------------
 // Modification
 //-----------------------------------------------------------------------------
