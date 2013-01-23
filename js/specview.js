@@ -81,6 +81,7 @@
             modInfo: "modInfo",
             ionTableDiv: "ionTableDiv",
             ionTable: "ionTable",
+            internalIonTable: "internalIonTable",
             fileinfo: "fileinfo",
             seqinfo: "seqinfo",
             peakDetect: "peakDetect"
@@ -262,6 +263,7 @@
         container.data("ionSeriesLabels", {a: [], b: [], c: [], x: [], y: [], z: []});
         container.data("ionSeriesMatch", {a: [], b: [], c: [], x: [], y: [], z: []});
         container.data("massError", options.massError);
+        container.data("internalIons", []);
 
         var maxInt = getMaxInt(options);
         var xmin = options.peaks[0][0];
@@ -785,6 +787,8 @@
 		$(getElementSelector(container, elementIds.ion_choice)).find("input:checked").each(function () {
 	        var key = $(this).attr("id");
 	        var tokens = key.split("_");
+            if(tokens.length < 2)
+                return;
 	        ions.push(tokens[0]);
 	        charges.push(tokens[1]);
 	  	});
@@ -797,6 +801,32 @@
 	    
 	    return selected;
 	}
+
+    function internalIonsEnabled(container) {
+        return $(getElementSelector(container, elementIds.ion_choice)).find("#internal").attr("checked");
+    }
+
+    function makeInternalIonsTable(container) {
+        var myTable = "";
+        myTable += '<table id="'+getElementId(container, elementIds.internalIonTable)+'" cellpadding="2" class="font_small '+elementIds.internalIonTable+'">' ;
+        myTable +=  "<thead>" ;
+        myTable +=   "<tr>";
+        myTable +=    "<th>" +"Seq"+ "</th>"; 
+        myTable +=    "<th>" +"&nbsp;"+ "</th>"; 
+        myTable +=   "</tr>";
+        myTable +=  "</thead>";
+
+        var internalIons = container.data("internalIons");
+        for(var i = 0; i < internalIons.length; i++) {
+            var internalIon = internalIons[i];
+            var label = internalIon["label"];
+            var mz = internalIon["mz"];
+            myTable += "<tr><td>" + label + "</td><td>" + mz + "</td></tr>";
+        }
+
+        myTable += "</table>"
+        return myTable;
+    }
 	
 	function getSelectedNtermIons(selectedIonTypes) {
 		var ntermIons = [];
@@ -914,6 +944,11 @@
 							ionSeriesData.unshift(sion = Ion.getSeriesIon(tion, container.data("options").peptide, i, massType));
 					}
 				}
+
+                if(internalIonsEnabled(container)) {
+                    var internalIons = getInternalIons(container.data("options").peptide, massType);
+                    container.data("internalIons", internalIons);
+                }
 			}
 		}
 	}
@@ -1417,6 +1452,11 @@
 		
 		myTable += "</tbody>";
 		myTable += "</table>";
+
+        $(getElementSelector(container, elementIds.internalIonTable)).remove();
+        if(internalIonsEnabled(container)) {
+            myTable += makeInternalIonsTable(container);
+        }
 		
 		// alert(myTable);
 		$(getElementSelector(container, elementIds.ionTable)).remove();
@@ -1730,8 +1770,12 @@
 		myTable += '<input type="checkbox" value="3" id="z_3"/>3<sup>+</sup> ';
 		myTable += '</nobr> ';
 		myTable += '<br/> ';
+
+        myTable += '<div><span style="font-weight: bold;">Internal</span><input type="checkbox" value="internal" id="internal"/> ';
+        myTable += '</nobr><br />';
+
 		myTable += '<span id="'+getElementId(container, elementIds.deselectIonsLink)+'" style="font-size:8pt;text-decoration: underline; color:sienna;cursor:pointer;">[Deselect All]</span> ';
-		myTable += '</div> ';
+		myTable += '</div><br /> ';
 		
 		myTable += '<span style="font-weight: bold;">Neutral Loss:</span> ';
 		myTable += '<div id="'+getElementId(container, elementIds.nl_choice)+'"> ';
