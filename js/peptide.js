@@ -101,10 +101,15 @@ function Peptide(seq, staticModifications, varModifications, ntermModification, 
 
         var mass = seqMass;
 
-        // add any static modifications
         if(term == "n") {
             for(var i = 0; i < index; i += 1) {
+                // add any static modifications
                 var mod = staticMods[sequence.charAt(i)];
+                if(mod) {
+                    mass += mod.modMass;
+                }
+                // add any variable modifications
+                mod = varMods[i+1]; // varMods index in the sequence is 1-based
                 if(mod) {
                     mass += mod.modMass;
                 }
@@ -112,30 +117,20 @@ function Peptide(seq, staticModifications, varModifications, ntermModification, 
         }
         if(term == "c") {
             for(var i = index; i < sequence.length; i += 1) {
+                // add any static modifications
                 var mod = staticMods[sequence.charAt(i)];
+                if(mod) {
+                    mass += mod.modMass;
+                }
+
+                // add any variable modifications
+                mod = varMods[i+1]; // varMods index in the sequence is 1-based
                 if(mod) {
                     mass += mod.modMass;
                 }
             }
         }
 
-        // add any variable modifications
-        if(term == "n") {
-            for(var i = 0; i < index; i += 1) {
-                var mod = varMods[i+1]; // varMods index in the sequence is 1-based
-                if(mod) {
-                    mass += mod.modMass;
-                }
-            }
-        }
-        if(term == "c") {
-            for(var i = index; i < sequence.length; i += 1) {
-                var mod = varMods[i+1]; // varMods index in the sequence is 1-based
-                if(mod) {
-                    mass += mod.modMass;
-                }
-            }
-        }
         return mass;
     }
 
