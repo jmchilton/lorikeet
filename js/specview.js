@@ -809,7 +809,7 @@
 
     function makeInternalIonsTable(container) {
         var myTable = "";
-        myTable += '<table id="'+getElementId(container, elementIds.internalIonTable)+'" cellpadding="2" class="font_small '+elementIds.ionTable+ '">' ;
+        myTable += '<table id="'+getElementId(container, elementIds.internalIonTable)+'" cellpadding="2" class="font_small '+elementIds.ionTable+ '" style="margin-top:5px;">' ;
         myTable +=  "<thead>" ;
         myTable +=   "<tr>";
         myTable +=    "<th>" +"Seq"+ "</th>"; 
@@ -822,7 +822,7 @@
             var internalIon = internalIons[i];
             var label = internalIon["label"];
             var mz = internalIon["mz"];
-            myTable += "<tr><td>" + label + "</td><td>" + mz + "</td></tr>";
+            myTable += "<tr><td>" + label + "</td><td>" + round(mz) + "</td></tr>";
         }
 
         myTable += "</table>"
