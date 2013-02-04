@@ -1,15 +1,21 @@
+// $LastChangedDate$
+// $LastChangedBy$
+// $LastChangedRevision$
+
+INTERNAL_ION_COLOR = "#C71585";
 
 function InternalIon(peptide, start, end, massType) {
-    var label = "";
+    var sequence = "";
     for(var i = start; i < end; i++) {
         var aa = peptide.sequence().charAt(i);
         var staticMod = peptide.staticMods()[aa];
         var variableMod = peptide.varMods()[i];
         var mod = (staticMod ? staticMod.modMass : 0) + (variableMod ? variableMod.modMass : 0);
-        label += aa + (mod != 0 ? ("(" + mod + ")") : "");
+        sequence += aa + (mod != 0 ? ("(" + mod + ")") : "");
     }
-    this.label = label;
-    // TODO: Actually calculate
+    this.sequence = sequence;
+    this.label = "<" + sequence + ">";
+    // TODO: Verify calculation, depends on massType?   
     this.mz = peptide.getSeqMass(start, end, "n", massType) + Ion.MASS_PROTON;
 }
 
@@ -27,5 +33,6 @@ var getInternalIons = function(peptide, massType) {
             }
         }
     }
+    interalIons.sort(function(ion1, ion2) { return ion1.mz - ion2.mz;})
     return interalIons;
 }

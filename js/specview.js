@@ -265,6 +265,8 @@
         container.data("ionSeriesMatch", {a: [], b: [], c: [], x: [], y: [], z: []});
         container.data("massError", options.massError);
         container.data("internalIons", []);
+        container.data("internalIonsMatch", []);
+        container.data("internalIonsLabels", []);
 
         var maxInt = getMaxInt(options);
         var xmin = options.peaks[0][0];
@@ -820,9 +822,15 @@
         var internalIons = container.data("internalIons");
         for(var i = 0; i < internalIons.length; i++) {
             var internalIon = internalIons[i];
-            var label = internalIon["label"];
+            var label = internalIon["sequence"];
             var mz = internalIon["mz"];
-            myTable += "<tr><td>" + label + "</td><td>" + round(mz) + "</td></tr>";
+            var cls = "";
+            var style="";
+            if(internalIon.match) {
+                cls="matchIon";
+                style="style='background-color:"+INTERNAL_ION_COLOR+";'";
+            }
+            myTable += "<tr><td class='seq'>" + label + "</td><td class='" + cls +"' " + style + " >" + round(mz) + "</td></tr>";
         }
 
         myTable += "</table>"
@@ -1062,6 +1070,47 @@
 				dataSeries.push({data: ionSeriesMatch.z[ion.charge], color: ion.color, labelType: peakLabelType, labels: ionSeriesLabels.z[ion.charge]});
 			}
 		}
+
+        if(internalIonsEnabled(container)) {
+            var internalIonsMatch = container.data("internalIonsMatch");
+            var internalIonsLabels = container.data("internalIonsLabels");
+            
+            if(recalculate(container) || (internalIonsMatch.length == 0)) { // TODO replace true with actual check mimicing above
+                var internalIons = container.data("internalIons");
+                var internalIonsMatch = container.data("internalIonsMatch");
+
+                // TODO: Keep working on this.
+                for(var i = 0; i < internalIons.length; i += 1) {
+                    var sion = internalIons[i];
+
+                    var neutralLosses = [];
+                    $(getElementSelector(container, elementIds.nl_choice)).find("input:checked").each(function() {
+                        neutralLosses.push($(this).val());
+                    });
+
+
+                    var peakIndex = 0;
+        
+                    var matchData = [];
+                    matchData[0] = []; // peaks
+                    matchData[1] = []; // labels -- ions;
+
+                    // get match for water and or ammonia loss
+                    for(var n = 0; n < neutralLosses.length; n += 1) {
+                        getMatchForIon(sion, matchData, peaks, peakIndex, massError, peakAssignmentType, neutralLosses[n]);
+                    }
+                    // get match for the ion
+                    peakIndex = getMatchForIon(sion, matchData, peaks, peakIndex, massError, peakAssignmentType);
+
+                    if(matchData && matchData.length > 0) {
+                        internalIonsMatch[sion.label] = matchData[0];
+                        internalIonsLabels[sion.label] = matchData[1];
+                        dataSeries.push({data: internalIonsMatch[sion.label], color: INTERNAL_ION_COLOR, labelType: peakLabelType, labels: internalIonsLabels[sion.label]});
+                    }
+                }
+            }
+        }
+
 		return dataSeries;
 	}
 
