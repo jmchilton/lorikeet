@@ -809,7 +809,7 @@
 
     function makeInternalIonsTable(container) {
         var myTable = "";
-        myTable += '<table id="'+getElementId(container, elementIds.internalIonTable)+'" cellpadding="2" class="font_small '+elementIds.internalIonTable+'">' ;
+        myTable += '<table id="'+getElementId(container, elementIds.internalIonTable)+'" cellpadding="2" class="font_small '+elementIds.ionTable+ '">' ;
         myTable +=  "<thead>" ;
         myTable +=   "<tr>";
         myTable +=    "<th>" +"Seq"+ "</th>"; 
