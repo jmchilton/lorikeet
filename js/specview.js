@@ -36,6 +36,7 @@
                 showIonTable: true,
                 showViewingOptions: true,
                 showOptionsTable: true,
+                showInternalIonOption: false,
                 showSequenceInfo: true
         };
 			
@@ -1771,9 +1772,10 @@
 		myTable += '</nobr> ';
 		myTable += '<br/> ';
 
-        myTable += '<div><span style="font-weight: bold;">Internal</span><input type="checkbox" value="internal" id="internal"/> ';
-        myTable += '</nobr><br />';
-
+        if(options.showInternalIonOption) {
+            myTable += '<div><span style="font-weight: bold;">Internal</span><input type="checkbox" value="internal" id="internal"/> ';
+            myTable += '</nobr><br />';
+        }
 		myTable += '<span id="'+getElementId(container, elementIds.deselectIonsLink)+'" style="font-size:8pt;text-decoration: underline; color:sienna;cursor:pointer;">[Deselect All]</span> ';
 		myTable += '</div><br /> ';
 		
