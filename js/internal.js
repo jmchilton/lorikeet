@@ -33,6 +33,10 @@ var getInternalIons = function(peptide, massType) {
             }
         }
     }
-    interalIons.sort(function(ion1, ion2) { return ion1.mz - ion2.mz;})
+    sortByMz(interalIons);
     return interalIons;
+}
+
+var sortByMz = function(ionArray) {
+    ionArray.sort(function(ion1, ion2) { return ion1.mz - ion2.mz;})
 }

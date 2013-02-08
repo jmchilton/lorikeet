@@ -37,7 +37,7 @@
                 showViewingOptions: true,
                 showOptionsTable: true,
                 showInternalIonOption: false,
-                showInternalIonTable: false,
+                showAllTable: false,
                 showSequenceInfo: true
         };
 			
@@ -78,6 +78,7 @@
             optionsTable: "optionsTable",
             ionTableLoc1: "ionTableLoc1",
             ionTableLoc2: "ionTableLoc2",
+            allTableLoc: "allTableLoc",
             viewOptionsDiv: "viewOptionsDiv",
             moveIonTable: "moveIonTable",
             modInfo: "modInfo",
@@ -810,6 +811,105 @@
         return $(getElementSelector(container, elementIds.ion_choice)).find("#internal").attr("checked");
     }
 
+    function allIonsEnabled(container) {
+        var options = container.data("options");
+        return options.showAllTable;
+    }    
+
+    function getAllIons(container) {
+        var options = container.data("options");
+
+        // selected ions
+        var selectedIonTypes = getSelectedIonTypes(container);
+        var ntermIons = getSelectedNtermIons(selectedIonTypes);
+        var ctermIons = getSelectedCtermIons(selectedIonTypes);
+        var ionSeries = container.data("ionSeries");
+
+        var allIons = [];
+
+        for(var i = 0; i < options.sequence.length; i += 1) {
+            var aaChar = options.sequence.charAt(i);
+
+            // nterm ions
+            for(var n = 0; n < ntermIons.length; n += 1) {
+                if(i < options.sequence.length - 1) {
+                    var seriesData = getCalculatedSeries(ionSeries, ntermIons[n]);
+                    var neutralLosses = getNeutralLosses(container);
+                    var sion = seriesData[i];
+													for(var nl = 0; nl < neutralLosses.length; nl += 1) {
+																  var neutralLoss = neutralLosses[nl];
+																  var ionLabel = matchLabel(sion, neutralLoss);
+																  var ionmz = ionMz(sion, neutralLoss);
+																  allIons.push({"mz": ionmz, "label": ionLabel, matched: false});
+                    }
+		             }    
+            }
+            
+            for(var c = 0; c < ctermIons.length; c += 1) {
+                if(i > 0) {
+                    var seriesData = getCalculatedSeries(ionSeries, ctermIons[c]);
+                    var idx = options.sequence.length - i - 1;
+                    var neutralLosses = getNeutralLosses(container);
+                    var sion = seriesData[idx];
+													for(var nl = 0; nl < neutralLosses.length; nl += 1) {
+													     var neutralLoss = neutralLosses[nl];
+																 var ionLabel = matchLabel(sion, neutralLoss);
+																 var ionmz = ionMz(sion, neutralLoss);
+																 allIons.push({"mz": ionmz, "label": ionLabel, matched: false});
+                    }
+                } 
+            }
+        }
+        if(internalIonsEnabled(container)) {
+            var internalIons = container.data("internalIons");
+            allIons = allIons.concat(internalIons);
+        }
+        sortByMz(allIons);
+        return allIons;
+    }
+
+    function makeAllIonsTable(container) {
+        var numColumns = 4; 
+        var myTable = "";
+        myTable += '<table id="' + getElementId(container, elementIds.allTableLoc) + '" cellpadding="2" class="font_small '+elementIds.ionTable+ '" style="margin-top:5px;">';
+        myTable +=  "<thead>" ;
+        myTable +=   "<tr>";
+        for(colNum = 0; colNum < numColumns; colNum++) {
+             myTable +=    "<th>" +"Ion"+ "</th>"; 
+             myTable +=    "<th>" +"&nbsp;"+ "</th>";
+        } 
+        myTable +=   "</tr>";
+        myTable +=  "</thead>";
+
+        var allIons = getAllIons(container);
+        for(var i = 0; i < allIons.length; i++) {
+            if(i % numColumns == 0) { // Start, end row.
+                 if(i > 0) {
+                      myTable += "</tr>";
+                 }
+                 myTable += "<tr>";
+            }
+            var ion = allIons[i];
+            // Encode for HTML
+            var label = $('<div/>').text(ion["label"]).html();
+            var mz = ion["mz"];
+            var cls = "";
+            var style="";
+            // Don't enable this until we can determine in main series ions are enabled.
+            /*
+            if(ion.match) {
+                cls="matchIon";
+                style="style='background-color:"+INTERNAL_ION_COLOR+";'";
+            }
+            */
+            myTable += "<td class='seq'>" + label + "</td><td class='" + cls +"' " + style + " >" + round(mz) + "</td>";
+        }
+        myTable += "</tr>";
+        myTable += "</table>"
+        return myTable;
+    }
+ 
+
     function makeInternalIonsTable(container) {
         var myTable = "";
         myTable += '<table id="'+getElementId(container, elementIds.internalIonTable)+'" cellpadding="2" class="font_small '+elementIds.ionTable+ '" style="margin-top:5px;">' ;
@@ -1426,6 +1526,16 @@
 		parentTable += '</td> ';
 		parentTable += '</tr> ';
 
+
+        if(options.showAllTable) {
+            parentTable += '<tr> ';
+            parentTable += '<td colspan="3" class="bar noprint" valign="top" align="center" id="'+getElementId(container, elementIds.allTableLoc)+'" > ';
+            parentTable += '<div align="center" style="width:100%;font-size:10pt;"> ';
+            parentTable += '</div> ';
+            parentTable += '</td> ';
+            parentTable += '</tr> ';
+        }
+
 		parentTable += '</tbody> ';
 		parentTable += '</table> ';
 
@@ -1530,6 +1640,12 @@
 		// alert(myTable);
 		$(getElementSelector(container, elementIds.ionTable)).remove();
 		$(getElementSelector(container, elementIds.ionTableDiv)).prepend(myTable); // add as the first child
+
+        if(allIonsEnabled(container)) {
+            $(getElementSelector(container, elementIds.allTableLoc)).html(makeAllIonsTable(container));
+        }
+
+
 	}
 	
 	function getCalculatedSeries(ionSeries, ion) {
