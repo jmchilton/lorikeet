@@ -39,6 +39,9 @@ Ion.X_3 = new Ion("x", "#9932CC", 3, "c"); // dark orchid
 Ion.Y_3 = new Ion("y", "#FFA07A", 3, "c"); // light salmon
 Ion.Z_3 = new Ion("z", "#FFD700", 3, "n"); // gold
 
+Ion.MH_1 = new Ion("mh", "#2F4F4F", 1, null);
+Ion.MH_2 = new Ion("mh", "#708090", 2, null);
+
 var _ions = [];
 _ions["a"] = [];
 _ions["a"][1] = Ion.A_1;
@@ -64,6 +67,9 @@ _ions["z"] = [];
 _ions["z"][1] = Ion.Z_1;
 _ions["z"][2] = Ion.Z_2;
 _ions["z"][3] = Ion.Z_3;
+_ions["mh"] = [];
+_ions["mh"][1] = Ion.MH_1;
+_ions["mh"][2] = Ion.MH_2;
 
 Ion.get = function _getIon(type, charge) {
 	
@@ -115,6 +121,8 @@ Ion.getSeriesIon = function _getSeriesIon(ion, peptide, idxInSeq, massType) {
 		return new Ion_Y (peptide, idxInSeq, ion.charge, massType);
 	if(ion.type == "z")
 		return new Ion_Z (peptide, idxInSeq, ion.charge, massType);
+	if(ion.type == "mh")
+		return new Ion_MH (peptide, ion.charge, massType);
 }
 
 function _makeIonLabel(type, index, charge) {
@@ -230,5 +238,19 @@ function Ion_Z (peptide, startIdx, charge, massType) {
 	this.label = _makeIonLabel("z", peptide.sequence().length - startIdx, charge);
 	this.match = false;
 	this.term = "c";
+	return this;
+}
+
+function Ion_MH (peptide, charge, massType) {
+	var mass = 0;
+	if(massType == "mono")
+		mass = peptide.getNeutralMassMono();
+	else if(massType == "avg")
+		mass = peptide.getNeutralMassAvg();
+	this.charge = charge;
+	this.mz = ( mass + (charge * MASS_PROTON) ) / charge;
+	this.label = _makeIonLabel("MH", "", charge);
+	this.match = false;
+	this.term = null;
 	return this;
 }

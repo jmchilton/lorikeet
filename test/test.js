@@ -16,6 +16,8 @@ test("Invalid AminoAcid", function() {
 
 // peptide.js tests
 var UNMODIFIED_TEST_PEPTIDE = new Peptide("AGCDE", [], [], 0.0, 0.0);
+var SHORT_TEST_PEPTIDE = new Peptide("AR", [], [], 0.0, 0.0);
+var SINGLETON_TEST_PEPTIDE = new Peptide("T", [], [], 0.0, 0.0);
 var STATIC_TEST_MODIFICATION = new Modification(AminoAcid.get("C"), 57.0);
 var STATIC_MODIFIED_PEPTIDE = new Peptide("AGCDE", [STATIC_TEST_MODIFICATION], [], 0.0, 0.0);
 var VARIABLE_TEST_MODIFICATION = new VariableModification(3, 57.0, AminoAcid.get("C"));
@@ -132,7 +134,69 @@ test("getSeriesIon for y", function() {
                AminoAcid.get("E").avg +
                2 * Ion.MASS_H + Ion.MASS_O;
     var mz = (mass + (1 * Ion.MASS_PROTON) ) / 1;
+    equal(seriesIonY.mz, mz);
 });
+
+test("getSeriesIon for MH", function() {
+    // Problems with avg
+    // AGCDE
+    // 494.5033 -> 494.4958 (charge 1)  D 0.0075
+    // 247.7554 -> 247.7516 (charge 2)  D 0.0038
+
+    // AR 
+    // 246.2907 -> 246.2859 (chrage 1)  D 0.0048
+    // 123.6491 -> 123.6466 (charge 2)  D 0.0025
+
+    // T
+    // 120.1285 -> 120.1262 (charge 1) D 0.0023
+    // 60.5680 -> 60.5667 (charge 2)   D 0.0013
+
+
+    var mhIon = Ion.get("mh", 1);
+    var seriesIonMH = Ion.getSeriesIon(mhIon, UNMODIFIED_TEST_PEPTIDE, null, "mono");
+
+    // From protein prospector
+    equal(seriesIonMH.mz.toFixed(4), 494.1551);
+
+    seriesIonMH = Ion.getSeriesIon(mhIon, UNMODIFIED_TEST_PEPTIDE, null, "avg");
+    // From protein prospector
+    equal(seriesIonMH.mz.toFixed(4), 494.5033);
+
+    mhIon = Ion.get("mh", 2);
+    seriesIonMH = Ion.getSeriesIon(mhIon, UNMODIFIED_TEST_PEPTIDE, null, "mono");
+
+    // From protein prospector
+    equal(seriesIonMH.mz.toFixed(4), 247.5812);
+
+    seriesIonMH = Ion.getSeriesIon(mhIon, UNMODIFIED_TEST_PEPTIDE, null, "avg");
+    // From protein prospector
+    equal(seriesIonMH.mz.toFixed(4), 247.7554);
+
+    // TEST SHORTER PEPTIDE
+    mhIon = Ion.get("mh", 1);
+    seriesIonMH = Ion.getSeriesIon(mhIon, SHORT_TEST_PEPTIDE, null, "avg");
+    // From protein prospector
+    equal(seriesIonMH.mz.toFixed(4), 246.2907);
+
+    mhIon = Ion.get("mh", 2);
+    seriesIonMH = Ion.getSeriesIon(mhIon, SHORT_TEST_PEPTIDE, null, "avg");
+    // From protein prospector
+    equal(seriesIonMH.mz.toFixed(4), 123.6491);
+
+
+    // TEST SHORTER PEPTIDE
+    mhIon = Ion.get("mh", 1);
+    seriesIonMH = Ion.getSeriesIon(mhIon, SINGLETON_TEST_PEPTIDE, null, "avg");
+    // From protein prospector
+    equal(seriesIonMH.mz.toFixed(4), 120.1285);
+
+    mhIon = Ion.get("mh", 2);
+    seriesIonMH = Ion.getSeriesIon(mhIon, SINGLETON_TEST_PEPTIDE, null, "avg");
+    // From protein prospector
+    equal(seriesIonMH.mz.toFixed(4), 60.5680);
+
+});
+
 
 test("getWaterLossMz", function() {
     function example() {

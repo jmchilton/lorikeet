@@ -37,6 +37,8 @@
                 showViewingOptions: true,
                 showOptionsTable: true,
                 showInternalIonOption: false,
+                showInternalIonTable: false,
+                showMHIonOption: false,
                 showAllTable: false,
                 showSequenceInfo: true
         };
@@ -262,13 +264,14 @@
         container.data("zoomRange", null);      // for zooming MS/MS plot
         container.data("ms1zoomRange", null);
         container.data("previousPoint", null);  // for tooltips
-        container.data("ionSeries", {a: [], b: [], c: [], x: [], y: [], z: []});
-        container.data("ionSeriesLabels", {a: [], b: [], c: [], x: [], y: [], z: []});
-        container.data("ionSeriesMatch", {a: [], b: [], c: [], x: [], y: [], z: []});
+        container.data("ionSeries", {a: [], b: [], c: [], x: [], y: [], z: [], mh: []});
+        container.data("ionSeriesLabels", {a: [], b: [], c: [], x: [], y: [], z: [], mh: []});
+        container.data("ionSeriesMatch", {a: [], b: [], c: [], x: [], y: [], z: [], mh: []});
         container.data("massError", options.massError);
         container.data("internalIons", []);
         container.data("internalIonsMatch", []);
         container.data("internalIonsLabels", []);
+
 
         var maxInt = getMaxInt(options);
         var xmin = options.peaks[0][0];
@@ -827,6 +830,21 @@
 
         var allIons = [];
 
+        for(var i = 0; i < selectedIonTypes.length; i += 1) {
+            var selectedIon = selectedIonTypes[i];
+            if(selectedIon.term == null) {
+                var neutralLosses = getNeutralLosses(container);
+                for(var nl = 0; nl < neutralLosses.length; nl += 1) {
+                    var neutralLoss = neutralLosses[nl];
+                    var seriesData = getCalculatedSeries(ionSeries, selectedIon);
+                    var sion = seriesData[0];
+                    var ionLabel = matchLabel(sion, neutralLoss);
+                    var ionmz = ionMz(sion, neutralLoss);
+                    allIons.push({"mz": ionmz, "label": ionLabel, matched: false});
+                }
+            }
+        }
+
         for(var i = 0; i < options.sequence.length; i += 1) {
             var aaChar = options.sequence.charAt(i);
 
@@ -860,6 +878,7 @@
                 } 
             }
         }
+
         if(internalIonsEnabled(container)) {
             var internalIons = container.data("internalIons");
             allIons = allIons.concat(internalIons);
@@ -1036,6 +1055,14 @@
 						todoIonSeriesData.push(ionSeries.z[sion.charge]);
 					}
 				}
+                if(sion.type == "mh") {
+                    if(!container.data("massTypeChanged") && ionSeries.mh[sion.charge])  continue; // already calculated
+                    else {
+                        todoIonSeries.push(sion);
+                        ionSeries.mh[sion.charge] = [];
+                        todoIonSeriesData.push(ionSeries.mh[sion.charge]);
+                    }
+                }                
 			}
 
 			if(container.data("options").sequence) {
@@ -1054,6 +1081,15 @@
 							ionSeriesData.unshift(sion = Ion.getSeriesIon(tion, container.data("options").peptide, i, massType));
 					}
 				}
+
+                // Add whole sequence ions
+                for(var j = 0; j < todoIonSeries.length; j += 1) {
+                    var tion = todoIonSeries[j];
+                    var ionSeriesData = todoIonSeriesData[j];
+                    if(tion.term == null) {
+                        ionSeriesData.push(sion = Ion.getSeriesIon(tion, container.data("options").peptide, null, massType));                        
+                    }
+                }                
 
                 if(internalIonsEnabled(container)) {
                     var internalIons = getInternalIons(container.data("options").peptide, massType);
@@ -1170,6 +1206,19 @@
 				}
 				dataSeries.push({data: ionSeriesMatch.z[ion.charge], color: ion.color, labelType: peakLabelType, labels: ionSeriesLabels.z[ion.charge]});
 			}
+
+            if(ion.type == "mh") {
+                if(recalculate(container) || !ionSeriesMatch.mh[ion.charge]) { // re-calculate only if mass error has changed OR
+                                                                        // matching peaks for this series have not been calculated
+                    // calculated matching peaks
+                    var mhdata = calculateMatchingPeaks(container, ionSeries.mh[ion.charge], peaks, massError, peakAssignmentType);
+                    if(mhdata && mhdata.length > 0) {
+                        ionSeriesMatch.mh[ion.charge] = mhdata[0];
+                        ionSeriesLabels.mh[ion.charge] = mhdata[1];
+                    }
+                }
+                dataSeries.push({data: ionSeriesMatch.mh[ion.charge], color: ion.color, labelType: peakLabelType, labels: ionSeriesLabels.mh[ion.charge]});
+            }
 		}
 
         if(internalIonsEnabled(container)) {
@@ -1199,7 +1248,7 @@
                     // for(var n = 0; n < neutralLosses.length; n += 1) {
                     //    getMatchForIon(sion, matchData, peaks, peakIndex, massError, peakAssignmentType, neutralLosses[n]);
                     //}
-                    
+
                     // get match for the ion
                     peakIndex = getMatchForIon(sion, matchData, peaks, peakIndex, massError, peakAssignmentType);
 
@@ -1661,6 +1710,8 @@
 			return ionSeries.y[ion.charge];
 		if(ion.type == "z")
 			return ionSeries.z[ion.charge];
+        if(ion.type == "mh")
+            return ionSeries.mh[ion.charge];
 	}
 	
 	function makeIonTableMovable(container) {
@@ -1955,6 +2006,14 @@
 		myTable += '<input type="checkbox" value="3" id="z_3"/>3<sup>+</sup> ';
 		myTable += '</nobr> ';
 		myTable += '<br/> ';
+
+        if(options.showMHIonOption) {
+            myTable += '<div><span style="font-weight: bold;">MH</span> ';
+            myTable += '<input type="checkbox" value="1" id="mh_1"/>1<sup>+</sup> ';
+            myTable += '<input type="checkbox" value="2" id="mh_2"/>2<sup>+</sup> ';
+            myTable += '</nobr> ';
+            myTable += '<br/> ';
+        }
 
         if(options.showInternalIonOption) {
             myTable += '<div><span style="font-weight: bold;">Internal</span><input type="checkbox" value="internal" id="internal"/> ';
