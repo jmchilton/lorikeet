@@ -172,6 +172,7 @@ function Ion_A (peptide, endIdxPlusOne, charge, massType) {
 	else if(massType == "avg")
 		mass = peptide.getSeqMassAvg(endIdxPlusOne, "n") - (MASS_C + MASS_O);
 	this.massType = massType;
+	this.subSequence = peptide.getSubSequence(endIdxPlusOne, "n");
 	this.charge = charge;
 	this.mz = _getMz(mass, charge);
 	this.label = _makeIonLabel("a",endIdxPlusOne, charge);
@@ -188,6 +189,7 @@ function Ion_B (peptide, endIdxPlusOne, charge, massType) {
 	else if(massType == "avg")
 		mass = peptide.getSeqMassAvg(endIdxPlusOne, "n");
 	this.massType = massType;
+	this.subSequence = peptide.getSubSequence(endIdxPlusOne, "n");
 	this.charge = charge;
 	this.mz = _getMz(mass, charge);
 	this.label = _makeIonLabel("b", endIdxPlusOne, charge);
@@ -204,6 +206,7 @@ function Ion_C (peptide, endIdxPlusOne, charge, massType) {
 	else if(massType == "avg")
 		mass = peptide.getSeqMassAvg(endIdxPlusOne, "n") + MASS_H + (MASS_N + 2*MASS_H);
   this.massType = massType;
+  this.subSequence = peptide.getSubSequence(endIdxPlusOne, "n");
 	this.charge = charge;
 	this.mz = _getMz(mass, charge);
 	this.label = _makeIonLabel("c", endIdxPlusOne, charge);
@@ -220,6 +223,7 @@ function Ion_X (peptide, startIdx, charge, massType) {
 	else if(massType == "avg")
 		mass = peptide.getSeqMassAvg(startIdx, "c") + 2*MASS_O + MASS_C;
 	this.massType = massType;
+	this.subSequence = peptide.getSubSequence(startIdx, "c");
 	this.charge = charge;
 	this.mz = _getMz(mass, charge);
 	this.label = _makeIonLabel("x", peptide.sequence().length - startIdx, charge);
@@ -236,6 +240,7 @@ function Ion_Y (peptide, startIdx, charge, massType) {
 	else if(massType == "avg")
 		mass = peptide.getSeqMassAvg(startIdx, "c") + 2*MASS_H + MASS_O;
 	this.massType = massType;
+	this.subSequence = peptide.getSubSequence(startIdx, "c");
 	this.charge = charge;
 	this.mz = _getMz(mass, charge);
     this.label = _makeIonLabel("y", peptide.sequence().length - startIdx, charge);
@@ -253,6 +258,7 @@ function Ion_Z (peptide, startIdx, charge, massType) {
 	else if(massType == "avg")
 		mass = peptide.getSeqMassAvg(startIdx, "c") + MASS_O - MASS_N;
 	this.massType = massType;
+	this.subSequence = peptide.getSubSequence(startIdx, "c");
 	this.charge = charge;
 	this.mz = _getMz(mass, charge);
 	this.label = _makeIonLabel("z", peptide.sequence().length - startIdx, charge);
@@ -268,6 +274,7 @@ function Ion_MH (peptide, charge, massType) {
 	else if(massType == "avg")
 		mass = peptide.getNeutralMassAvg();
 	this.massType = massType;
+	this.subSequence = peptide.sequence;
 	this.charge = charge;
 	this.mz = ( mass + (charge * MASS_PROTON) ) / charge;
 	this.label = _makeIonLabel("MH", "", charge);
@@ -275,3 +282,35 @@ function Ion_MH (peptide, charge, massType) {
 	this.term = null;
 	return this;
 }
+
+
+function NeutralLoss (label, residues) {
+	this.label = label;
+	this.residues = residues;
+
+
+	this.applies = function _applies(sequence) {
+		if(!this.residues) {
+			return true;
+		}
+		for(var i = 0; i < this.residues.length; i++) {
+			if(sequence.indexOf(this.residues[i]) >= 0) {
+				return true;
+			}
+		}
+		return false;
+	}
+}
+
+
+NeutralLoss.get = function _getNeutralLoss(label, residueSpecific) {
+	if(!label) {
+		return new NeutralLoss(null, null);
+	} else if(label == 'nh3') {
+		return new NeutralLoss('nh3', residueSpecific ? 'RKQN' : null);
+	} else if(label == 'h2o') {
+		return new NeutralLoss('h2o', residueSpecific ? 'STED' : null);
+	}
+	throw "unknown neutral loss label " + label;
+}
+

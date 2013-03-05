@@ -130,6 +130,17 @@ function Peptide(seq, staticModifications, varModifications, ntermModification, 
         return mass;
     }
 
+    this.getSubSequence = function _getSubSeq(endIndex, term) {
+        var slice = new _Slice(null, endIndex, term);
+        var subSequence = ''
+        if(sequence) {
+            for( var i = slice.from; i < slice.to; i += 1) {
+                subSequence += sequence[i];
+            }
+        }
+        return subSequence;
+    }
+
     function _getSeqMass(startIndex, endIndex, term, massType) {
 
         var mass = 0;

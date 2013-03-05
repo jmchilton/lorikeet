@@ -33,6 +33,7 @@
                 height: 450, 	// height of the ms/ms plot
                 massError: 0.5, // mass tolerance for labeling peaks
                 extraPeakSeries:[],
+                residueSpecificNeutralLosses: false,
                 showIonTable: true,
                 showViewingOptions: true,
                 showOptionsTable: true,
@@ -838,8 +839,11 @@
                     var neutralLoss = neutralLosses[nl];
                     var seriesData = getCalculatedSeries(ionSeries, selectedIon);
                     var sion = seriesData[0];
-                    var ionLabel = matchLabel(sion, neutralLoss);
-                    var ionmz = ionMz(sion, neutralLoss);
+		    if(!neutralLoss.applies(sion.subSequence)) {
+			continue;
+		    }
+                    var ionLabel = matchLabel(sion, neutralLoss.label);
+                    var ionmz = ionMz(sion, neutralLoss.label);
                     allIons.push({"mz": ionmz, "label": ionLabel, matched: false});
                 }
             }
@@ -854,13 +858,16 @@
                     var seriesData = getCalculatedSeries(ionSeries, ntermIons[n]);
                     var neutralLosses = getNeutralLosses(container);
                     var sion = seriesData[i];
-													for(var nl = 0; nl < neutralLosses.length; nl += 1) {
-																  var neutralLoss = neutralLosses[nl];
-																  var ionLabel = matchLabel(sion, neutralLoss);
-																  var ionmz = ionMz(sion, neutralLoss);
-																  allIons.push({"mz": ionmz, "label": ionLabel, matched: false});
-                    }
-		             }    
+			for(var nl = 0; nl < neutralLosses.length; nl += 1) {
+				var neutralLoss = neutralLosses[nl];
+				if(!neutralLoss.applies(sion.subSequence)) {
+					continue;
+				}
+				var ionLabel = matchLabel(sion, neutralLoss.label);
+				var ionmz = ionMz(sion, neutralLoss.label);
+				allIons.push({"mz": ionmz, "label": ionLabel, matched: false});
+	                }
+		}
             }
             
             for(var c = 0; c < ctermIons.length; c += 1) {
@@ -871,8 +878,12 @@
                     var sion = seriesData[idx];
 													for(var nl = 0; nl < neutralLosses.length; nl += 1) {
 													     var neutralLoss = neutralLosses[nl];
-																 var ionLabel = matchLabel(sion, neutralLoss);
-																 var ionmz = ionMz(sion, neutralLoss);
+				if(!neutralLoss.applies(sion.subSequence)) {
+					continue;
+				}
+
+																 var ionLabel = matchLabel(sion, neutralLoss.label);
+																 var ionmz = ionMz(sion, neutralLoss.label);
 																 allIons.push({"mz": ionmz, "label": ionLabel, matched: false});
                     }
                 } 
@@ -1265,11 +1276,12 @@
 	}
 
 		function getNeutralLosses(container) {
+			var options = container.data("options");
 			var neutralLosses = [];
 			$(getElementSelector(container, elementIds.nl_choice)).find("input:checked").each(function() {
-				neutralLosses.push($(this).val());
+				neutralLosses.push(NeutralLoss.get($(this).val(), options.residueSpecificNeutralLosses));
 			});
-			neutralLosses.push(null); // Always calculate base ions without neutral loss applied.
+			neutralLosses.push(NeutralLoss.get(null)); // Always calculate base ions without neutral loss applied.
 			return neutralLosses;
 		}
 
@@ -1318,7 +1330,11 @@
 			
 			// get match for water and or ammonia loss
 			for(var n = 0; n < neutralLosses.length; n += 1) {
-				var index = getMatchForIon(sion, matchData, allPeaks, peakIndex, massTolerance, peakAssignmentType, neutralLosses[n]);
+				var neutralLoss = neutralLosses[n];
+				if(!neutralLoss.applies(sion.subSequence)) {
+					continue;
+				}
+				var index = getMatchForIon(sion, matchData, allPeaks, peakIndex, massTolerance, peakAssignmentType, neutralLoss.label);
 				if(neutralLosses[n] == null) {
 					peakIndex = index;
 				}

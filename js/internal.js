@@ -14,6 +14,7 @@ function InternalIon(peptide, start, end, massType) {
         sequence += aa + (mod != 0 ? ("(" + mod + ")") : "");
     }
     this.sequence = sequence;
+    this.subSequence = sequence;
     this.label = "<" + sequence + ">";
     // TODO: Verify calculation, depends on massType?   
     this.mz = peptide.getSeqMass(start, end, "n", massType) + Ion.MASS_PROTON;
