@@ -137,13 +137,27 @@ function _getMz(neutralMass, charge) {
 }
 
 function _getWaterLossMz(sion) {
+  var massType = sion.massType;
+  var mass_h = MASS_H;
+  var mass_o = MASS_O;
+  if(massType == "mono") {
+    mass_h = MASS_H_1;
+    mass_o = MASS_O_16;
+  }
 	var neutralMass = (sion.mz * sion.charge) - (sion.charge * MASS_PROTON);
-	return _getMz((neutralMass - (MASS_H * 2 + MASS_O)), sion.charge);
+	return _getMz((neutralMass - (mass_h * 2 + mass_o)), sion.charge);
 }
 
 function _getAmmoniaLossMz(sion) {
+  var massType = sion.massType;
+  var mass_h = MASS_H;
+  var mass_n = MASS_O;
+  if(massType == "mono") {
+    mass_h = MASS_H_1;  
+    mass_n = MASS_N_14;
+  }
 	var neutralMass = (sion.mz * sion.charge) - (sion.charge * MASS_PROTON);
-	return _getMz((neutralMass - (MASS_H * 3 + MASS_N)), sion.charge);
+	return _getMz((neutralMass - (mass_h * 3 + mass_n)), sion.charge);
 }
 
 Ion.getMz = _getMz;
@@ -157,6 +171,7 @@ function Ion_A (peptide, endIdxPlusOne, charge, massType) {
 		mass = peptide.getSeqMassMono(endIdxPlusOne, "n") - (MASS_C_12 + MASS_O_16);
 	else if(massType == "avg")
 		mass = peptide.getSeqMassAvg(endIdxPlusOne, "n") - (MASS_C + MASS_O);
+	this.massType = massType;
 	this.charge = charge;
 	this.mz = _getMz(mass, charge);
 	this.label = _makeIonLabel("a",endIdxPlusOne, charge);
@@ -172,6 +187,7 @@ function Ion_B (peptide, endIdxPlusOne, charge, massType) {
 		mass = peptide.getSeqMassMono(endIdxPlusOne, "n");
 	else if(massType == "avg")
 		mass = peptide.getSeqMassAvg(endIdxPlusOne, "n");
+	this.massType = massType;
 	this.charge = charge;
 	this.mz = _getMz(mass, charge);
 	this.label = _makeIonLabel("b", endIdxPlusOne, charge);
@@ -187,6 +203,7 @@ function Ion_C (peptide, endIdxPlusOne, charge, massType) {
 		mass = peptide.getSeqMassMono(endIdxPlusOne, "n") + MASS_H_1 + (MASS_N_14 + 2*MASS_H_1);
 	else if(massType == "avg")
 		mass = peptide.getSeqMassAvg(endIdxPlusOne, "n") + MASS_H + (MASS_N + 2*MASS_H);
+  this.massType = massType;
 	this.charge = charge;
 	this.mz = _getMz(mass, charge);
 	this.label = _makeIonLabel("c", endIdxPlusOne, charge);
@@ -202,6 +219,7 @@ function Ion_X (peptide, startIdx, charge, massType) {
 		mass = peptide.getSeqMassMono(startIdx, "c") + 2*MASS_O_16 + MASS_C_12;
 	else if(massType == "avg")
 		mass = peptide.getSeqMassAvg(startIdx, "c") + 2*MASS_O + MASS_C;
+	this.massType = massType;
 	this.charge = charge;
 	this.mz = _getMz(mass, charge);
 	this.label = _makeIonLabel("x", peptide.sequence().length - startIdx, charge);
@@ -217,6 +235,7 @@ function Ion_Y (peptide, startIdx, charge, massType) {
 		mass = peptide.getSeqMassMono(startIdx, "c") + 2*MASS_H_1 + MASS_O_16;
 	else if(massType == "avg")
 		mass = peptide.getSeqMassAvg(startIdx, "c") + 2*MASS_H + MASS_O;
+	this.massType = massType;
 	this.charge = charge;
 	this.mz = _getMz(mass, charge);
     this.label = _makeIonLabel("y", peptide.sequence().length - startIdx, charge);
@@ -233,6 +252,7 @@ function Ion_Z (peptide, startIdx, charge, massType) {
 		mass = peptide.getSeqMassMono(startIdx, "c") + MASS_O_16 - MASS_N_14;
 	else if(massType == "avg")
 		mass = peptide.getSeqMassAvg(startIdx, "c") + MASS_O - MASS_N;
+	this.massType = massType;
 	this.charge = charge;
 	this.mz = _getMz(mass, charge);
 	this.label = _makeIonLabel("z", peptide.sequence().length - startIdx, charge);
@@ -247,6 +267,7 @@ function Ion_MH (peptide, charge, massType) {
 		mass = peptide.getNeutralMassMono();
 	else if(massType == "avg")
 		mass = peptide.getNeutralMassAvg();
+	this.massType = massType;
 	this.charge = charge;
 	this.mz = ( mass + (charge * MASS_PROTON) ) / charge;
 	this.label = _makeIonLabel("MH", "", charge);
