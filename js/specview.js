@@ -921,6 +921,7 @@
             }
             var ion = allIons[i];
             // Encode for HTML
+            console.log(ion);
             var label = $('<div/>').text(ion["label"]).html();
             var mz = ion["mz"];
             var cls = "";

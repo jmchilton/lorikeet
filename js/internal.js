@@ -4,7 +4,7 @@
 
 INTERNAL_ION_COLOR = "#C71585";
 
-function InternalIon(peptide, start, end, massType) {
+function InternalIon(peptide, start, end, massType, minus28) {
     var sequence = "";
     for(var i = start; i < end; i++) {
         var aa = peptide.sequence().charAt(i);
@@ -15,9 +15,14 @@ function InternalIon(peptide, start, end, massType) {
     }
     this.sequence = sequence;
     this.subSequence = sequence;
-    this.label = "<" + sequence + ">";
+    this.label = "<" + sequence + ">" + (minus28 ? "-CO" : ""); 
     // TODO: Verify calculation, depends on massType?   
-    this.mz = peptide.getSeqMass(start, end, "n", massType) + Ion.MASS_PROTON;
+    var massAdjust = Ion.MASS_PROTON;
+    if(minus28) {
+        massAdjust -= massType == "mono" ? Ion.MASS_C_12 : Ion.MASS_C;
+        massAdjust -= massType == "mono" ? Ion.MASS_O_16 : Ion.MASS_O;
+    }
+    this.mz = peptide.getSeqMass(start, end, "n", massType) + massAdjust;
 }
 
 var getInternalIons = function(peptide, massType) {
@@ -26,8 +31,14 @@ var getInternalIons = function(peptide, massType) {
     var interalIons = [];
     for(var i = 1; i < seqLength - 1; i++) {
         for(var j = i + 2; j < seqLength; j++) {
-            var internalIon = new InternalIon(peptide, i, j, massType);
+            var internalIon = new InternalIon(peptide, i, j, massType, false);
             var label = internalIon.label;
+            if(!labels[label]) {
+                labels[label] = true;
+                interalIons.push(internalIon);
+            }
+            internalIon = new InternalIon(peptide, i, j, massType, true);
+            label = internalIon.label;
             if(!labels[label]) {
                 labels[label] = true;
                 interalIons.push(internalIon);
