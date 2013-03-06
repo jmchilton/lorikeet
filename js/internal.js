@@ -23,6 +23,10 @@ function InternalIon(peptide, start, end, massType, minus28) {
         massAdjust -= massType == "mono" ? Ion.MASS_O_16 : Ion.MASS_O;
     }
     this.mz = peptide.getSeqMass(start, end, "n", massType) + massAdjust;
+    this.massType = massType;
+    this.charge = 1;
+    this.internal = true;
+    this.minus28 = minus28 ? true : false;
 }
 
 var getInternalIons = function(peptide, massType) {

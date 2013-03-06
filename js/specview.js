@@ -839,7 +839,7 @@
                     var neutralLoss = neutralLosses[nl];
                     var seriesData = getCalculatedSeries(ionSeries, selectedIon);
                     var sion = seriesData[0];
-		    if(!neutralLoss.applies(sion.subSequence)) {
+		    if(!neutralLoss.applies(sion)) {
 			continue;
 		    }
                     var ionLabel = matchLabel(sion, neutralLoss.label);
@@ -860,7 +860,7 @@
                     var sion = seriesData[i];
 			for(var nl = 0; nl < neutralLosses.length; nl += 1) {
 				var neutralLoss = neutralLosses[nl];
-				if(!neutralLoss.applies(sion.subSequence)) {
+				if(!neutralLoss.applies(sion)) {
 					continue;
 				}
 				var ionLabel = matchLabel(sion, neutralLoss.label);
@@ -878,7 +878,7 @@
                     var sion = seriesData[idx];
 													for(var nl = 0; nl < neutralLosses.length; nl += 1) {
 													     var neutralLoss = neutralLosses[nl];
-				if(!neutralLoss.applies(sion.subSequence)) {
+				if(!neutralLoss.applies(sion)) {
 					continue;
 				}
 
@@ -892,7 +892,19 @@
 
         if(internalIonsEnabled(container)) {
             var internalIons = container.data("internalIons");
-            allIons = allIons.concat(internalIons);
+            for(var i = 0; i < internalIons.length; i += 1) {
+                var sion = internalIons[i];
+                var neutralLosses = getNeutralLosses(container);
+                for(var nl = 0; nl < neutralLosses.length; nl += 1) {
+                    var neutralLoss = neutralLosses[nl];
+                    if(!neutralLoss.applies(sion)) {
+                        continue;
+                    }
+                    var ionLabel = matchLabel(sion, neutralLoss.label);
+                    var ionmz = ionMz(sion, neutralLoss.label);
+                    allIons.push({"mz": ionmz, "label": ionLabel, matched: false});
+                }
+            }
         }
         sortByMz(allIons);
         return allIons;
@@ -1244,30 +1256,25 @@
                 // TODO: Keep working on this.
                 for(var i = 0; i < internalIons.length; i += 1) {
                     var sion = internalIons[i];
-
-                    //var neutralLosses = [];
-                    //$(getElementSelector(container, elementIds.nl_choice)).find("input:checked").each(function() {
-                    //    neutralLosses.push($(this).val());
-                    //});
-
                     var peakIndex = 0;
         
                     var matchData = [];
                     matchData[0] = []; // peaks
                     matchData[1] = []; // labels -- ions;
+                    var neutralLosses = getNeutralLosses(container);
+                    for(var n = 0; n < neutralLosses.length; n += 1) {
+                        var neutralLoss = neutralLosses[n];
+                        if(!neutralLoss.applies(sion)) {
+                            continue;
+                        }
 
-                    // // get match for water and or ammonia loss
-                    // for(var n = 0; n < neutralLosses.length; n += 1) {
-                    //    getMatchForIon(sion, matchData, peaks, peakIndex, massError, peakAssignmentType, neutralLosses[n]);
-                    //}
+                        peakIndex = getMatchForIon(sion, matchData, peaks, peakIndex, massError, peakAssignmentType, neutralLoss);
 
-                    // get match for the ion
-                    peakIndex = getMatchForIon(sion, matchData, peaks, peakIndex, massError, peakAssignmentType);
-
-                    if(matchData && matchData.length > 0) {
-                        internalIonsMatch[sion.label] = matchData[0];
-                        internalIonsLabels[sion.label] = matchData[1];
-                        dataSeries.push({data: internalIonsMatch[sion.label], color: INTERNAL_ION_COLOR, labelType: peakLabelType, labels: internalIonsLabels[sion.label]});
+                        if(matchData && matchData.length > 0) {
+                            internalIonsMatch[sion.label] = matchData[0];
+                            internalIonsLabels[sion.label] = matchData[1];
+                            dataSeries.push({data: internalIonsMatch[sion.label], color: INTERNAL_ION_COLOR, labelType: peakLabelType, labels: internalIonsLabels[sion.label]});
+                        }
                     }
                 }
             }
@@ -1332,7 +1339,7 @@
 			// get match for water and or ammonia loss
 			for(var n = 0; n < neutralLosses.length; n += 1) {
 				var neutralLoss = neutralLosses[n];
-				if(!neutralLoss.applies(sion.subSequence)) {
+				if(!neutralLoss.applies(sion)) {
 					continue;
 				}
 				var index = getMatchForIon(sion, matchData, allPeaks, peakIndex, massTolerance, peakAssignmentType, neutralLoss.label);

@@ -289,10 +289,14 @@ function NeutralLoss (label, residues) {
 	this.residues = residues;
 
 
-	this.applies = function _applies(sequence) {
+	this.applies = function _applies(sion) {
 		if(!this.residues) {
 			return true;
 		}
+		if(sion.internal && sion.minus28) {
+			return false;
+		}
+		var sequence = sion.subSequence;
 		for(var i = 0; i < this.residues.length; i++) {
 			if(sequence.indexOf(this.residues[i]) >= 0) {
 				return true;
