@@ -274,7 +274,7 @@ function Ion_MH (peptide, charge, massType) {
 	else if(massType == "avg")
 		mass = peptide.getNeutralMassAvg();
 	this.massType = massType;
-	this.subSequence = peptide.sequence;
+	this.subSequence = peptide.sequence();
 	this.charge = charge;
 	this.mz = ( mass + (charge * MASS_PROTON) ) / charge;
 	this.label = _makeIonLabel("MH", "", charge);
