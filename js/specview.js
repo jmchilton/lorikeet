@@ -32,6 +32,7 @@
                 width: 700, 	// width of the ms/ms plot
                 height: 450, 	// height of the ms/ms plot
                 massError: 0.5, // mass tolerance for labeling peaks
+                useCookies: true,
                 extraPeakSeries:[],
                 residueSpecificNeutralLosses: false,
                 showIonTable: true,
@@ -41,10 +42,17 @@
                 showInternalIonTable: false,
                 showMHIonOption: false,
                 showAllTable: false,
-                showSequenceInfo: true
+                showSequenceInfo: true                
         };
 			
 	    var options = $.extend(true, {}, defaults, opts); // this is a deep copy
+        var massError = options.massError;
+        if(options.useCookies) {  
+            var cookieMassError = readCookie('lorikeetmasserror');
+            if(cookieMassError) { 
+                	options.massError = parseFloat(cookieMassError);
+            	}
+        }
 
         return this.each(function() {
 
@@ -107,6 +115,7 @@
 
     function init(parent_container, options) {
 
+
         // trim any 0 intensity peaks from the end of the peaks array
         trimPeaksArray(options);
 
@@ -160,7 +169,7 @@
             showFileInfo(container, options);
             showModInfo(container, options);
         }
-
+        loadPlotCookies(container);
         createPlot(container, getDatasets(container)); // Initial MS/MS Plot
 
         if(options.ms1peaks && options.ms1peaks.length > 0) {
@@ -252,7 +261,6 @@
     }
 
     function storeContainerData(container, options) {
-
         container.data("index", index);
         container.data("options", options);
         container.data("massErrorChanged", false);
@@ -326,6 +334,10 @@
 		if(me != container.data("massError")) {
 			container.data("massError", me);
 			container.data("massErrorChanged", true);
+			var options = container.data("options");
+			if(options.useCookies) {
+				createCookie('lorikeetmasserror', '' + me);
+			}
 		}
 		else {
 			container.data("massErrorChanged", false);
@@ -609,8 +621,40 @@
 		setMassError(container);
 		createPlot(container, getDatasets(container));
 	}
+		
+	function savePlotCookies(container) {
+		var options = container.data('options');
+		if(options.useCookies) {
+        var ionChoiceContainer = $(getElementSelector(container, elementIds.ion_choice));
+        ionChoiceContainer.find("input").each(function() {
+                var checked = $(this).is(":checked");
+                var id = $(this).attr("id");
+                createCookie("lorikeet"+id, checked);
+        });
+		}		
+	}
+	
+	function loadPlotCookies(container) {
+		var options = container.data('options');
+		if(options.useCookies) {
+        var ionChoiceContainer = $(getElementSelector(container, elementIds.ion_choice));
+        ionChoiceContainer.find("input").each(function() {
+                var checked = $(this).is(":checked");
+                var id = $(this).attr("id");
+                var value = readCookie("lorikeet"+id);
+                if(value) {
+                	if(value == "true") {
+                		$(this).attr("checked", true);
+                	} else if(value == "false") {
+                		$(this).attr("checked", false);
+                	}
+                }
+        });
+		}				
+	}
 	
 	function plotAccordingToChoices(container) {
+		savePlotCookies(container);
         var data = getDatasets(container);
 
 		if (data.length > 0) {
@@ -933,7 +977,6 @@
             }
             var ion = allIons[i];
             // Encode for HTML
-            console.log(ion);
             var label = $('<div/>').text(ion["label"]).html();
             var mz = ion["mz"];
             var cls = "";
@@ -2123,3 +2166,28 @@
 
 	
 })(jQuery);
+
+// Cookie functions from:
+// http://www.quirksmode.org/js/cookies.html
+function createCookie(name,value,days) {
+	if (days) {
+		var date = new Date();
+		date.setTime(date.getTime()+(days*24*60*60*1000));
+		var expires = "; expires="+date.toGMTString();
+	}
+	else var expires = "";
+	var value = name+"="+value+expires+"; path=/";
+	document.cookie = value;
+	
+}
+
+function readCookie(name) {
+	var nameEQ = name + "=";
+	var ca = document.cookie.split(';');
+	for(var i=0;i < ca.length;i++) {
+		var c = ca[i];
+		while (c.charAt(0)==' ') c = c.substring(1,c.length);
+		if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length,c.length);
+	}
+	return null;
+}
